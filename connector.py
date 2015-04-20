@@ -54,7 +54,10 @@ def serverToLocal():
 
 def localToServer():
   while True:
-    data = socks.local.recv(1024)
+    try:
+        data = socks.local.recv(1024)
+    except:
+        data = ""
     if data.decode("utf-8") == "":
       print("[Local disconnect]")
       if socks.remote is None:
