@@ -1,6 +1,6 @@
 import re
 __handlers = {
-  "line": set()
+  "line": []
 }
 def emitEvent(event, *args):
   for handler in __handlers.get(event, []):
@@ -9,7 +9,8 @@ def emitEvent(event, *args):
 
 # Irc commands
 def raw(line):
-  """Replaced by bot.py unpon having an actual handler"""
+  """Replaced by bot.py unpon having an actual handler
+  """
   print("Unhandled", line)
 
 def rawf(line, *args):
@@ -28,7 +29,7 @@ def join(chan):
 # Lower level - works on all lines of irc
 def onRawLine():
   def decorator(func):
-    __handlers["line"].add(func)
+    __handlers["line"].append(func)
     return func
   return decorator
 
@@ -52,23 +53,25 @@ def onPrivmsg():
     @onRegex("^:(.*?)!.*?PRIVMSG (.*?) :(.*)$")
     def handler(match):
       sender, target, message = match.groups()
-      print("privmsg regex matched")
+
       if target[0]!='#':
         target = sender
 
       func(sender, message, target)
     return handler
   return decorator
+onMsg = onPrivmsg
 
 def onInvite():
   def decorator(func):
-    #':snail!snail@#!-D1E8CCF0.hsd1.ca.comcast.net INVITE somenick :#test\r\n
     @onRegex("^:(.*?)!.*INVITE (.*?) :(.*)$")
     def handler(match):
       sender, target, channel = match.groups()
       func(sender, channel)
     return handler
   return decorator
+
+
 # high level - works on only specifically interesting events
 def onCommand(command=None, split=False):
   """
@@ -97,4 +100,7 @@ def onCommand(command=None, split=False):
       func(who, args, where)
     return commandHandler
   return decorator
+
+# add onSchedule(seconds)
+
 
