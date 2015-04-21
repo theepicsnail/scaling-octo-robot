@@ -3,97 +3,97 @@
 
 import socket, ssl, select, os, threading
 os.system("clear")
-class socks:
-  localServer = None
-  local = None
-  remote = None
 
-def connect_local(sock_file):
-  try:
-    os.unlink(sock_file)
-  except:pass
-  localSock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-  localSock.bind(sock_file)
-  localSock.listen(1)
-  socks.localServer = localSock
+class SocketBase:
+    def __init__(self):
+        self.sock = None
 
-def acceptLocal():
-  print("[Waiting Local]")
-  socks.local = None
-  socks.local,_ = socks.localServer.accept()
-  print("[Local Connected]")
+    def connect(self):
+        pass
 
+    def send(self, text):
+        try:
+            text = text.encode('utf-8')
+            print(self.name,"<<",text.strip())
+            self.sock.send(text)
+            return
+        except Exception as e:
+          pass
+        print(self.name, "(Missed)")
+
+    def read(self):
+        if self.sock is None:
+            print("[%s Connecting]" % self.name)
+            self.connect()
+            print("[%s Connected]" % self.name)
+
+        try:
+            ret = self.sock.recv(1024).decode('utf-8')
+
+            if ret == "":
+                self.sock = None
+                return self.read()
+
+            print(self.name,">>",ret.strip())
+            return ret
+        except Exception as e:
+            print(e)
+            self.sock = None
+            raise # This should go away
+        return self.read()
+
+class IrcSocket(SocketBase):
+    name = "Irc"
+    def connect(self):
+        host, port = "irc.hashbang.sh", 6697
+        nick = "someNick"
+        secure = True
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if secure:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.check_hostname = True
+            context.load_default_certs()
+            s = context.wrap_socket(s, server_hostname=host)
+
+        s.connect((host, port))
+        self.sock = s
+        self.send("USER a b c d :e\r\nNICK " + nick + "\r\n")
+
+class LocalSocket(SocketBase):
+    name = "Local"
+    sock_file = "/tmp/sock"
+
+    def connect(self):
+        self.name = "Local"
+        self.sock = None
+        try:
+            os.unlink(LocalSocket.sock_file)
+        except:pass
+        localSock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        localSock.bind(LocalSocket.sock_file)
+        localSock.listen(1)
+        self.sock,_ = localSock.accept()
+
+local = LocalSocket()
+irc = IrcSocket()
 
 def serverToLocal():
-  data = ""
-  while True:
-    read = socks.remote.recv(1024)
-    if read == b'':
-      print("[Remote disconnect]")
-      socks.remote = None
-      return
+    buff = ""
+    while True:
+        read = irc.read()
+        buff += read
+        while "\n" in buff:
+            line, buff = buff.split("\n",1)
+            if line.startswith("PING "):
+                irc.send(line.replace("PING", "PONG")+"\n")
 
-    data += read.decode("utf-8")
-    while "\n" in data:
-      line, data = data.split("\n", 1)
-      if line.startswith("PING"):
-        line = "PONG {}\r\n".format(line.split(" ")[1])
-        socks.remote.send(line.encode('utf-8'))
-        print("[Ping]")
-
-    if socks.local == None:
-      print("Local missed:", read)
-      continue
-
-    try:
-      print(">>", read)
-      socks.local.send(read)
-    except Exception as e:
-      print("Local exception:", read)
-      print(e)
-
+        local.send(read)
 def localToServer():
-  while True:
-    try:
-        data = socks.local.recv(1024)
-    except:
-        data = ""
-    if data.decode("utf-8") == "":
-      print("[Local disconnect]")
-      if socks.remote is None:
-        return
-      acceptLocal()
-      print("[Local reconnect]")
-      continue
-
-    try:
-      print("<<", data)
-      socks.remote.send(data)
-    except Exception as e:
-      print("Remote missed:", data)
-      print(e)
-
-def connectIrc(host, port, nick, secure=False):
-  s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-  if secure:
-    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-    context.verify_mode = ssl.CERT_REQUIRED
-    context.check_hostname = True
-    context.load_default_certs()
-    s = context.wrap_socket(s, server_hostname=host)
-
-  print("[irc Connecting]")
-  s.connect((host, port))
-  print("[irc Connecting]")
-  socks.remote = s
-  socks.remote.send("USER a b c d :e\r\nNICK {}\r\n".format("somenick").encode('utf-8'))
+    while True:
+        irc.send(local.read())
 
 
-
-connect_local("/tmp/sock")
-acceptLocal()
-connectIrc("irc.hashbang.sh", 6697, "someNick", True)
 a = threading.Thread(target=serverToLocal)
 b = threading.Thread(target=localToServer)
 a.start()
