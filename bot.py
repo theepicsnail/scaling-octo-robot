@@ -2,13 +2,12 @@
 from colors import parse_colors
 import api
 import os
-os.system("clear")
+#os.system("clear")
 sock_file = "/tmp/sock"
 import socket, sys, threading
 
 class socks:
   local = None
-
 
 def sendline(line):
   if socks.local is None:
@@ -18,18 +17,23 @@ def sendline(line):
     socks.local.send(line.encode("utf-8"))
 
 def readLocal():
-  data = ""
-  while True:
-    read = socks.local.recv(1024).decode('utf-8')
-    if read == '':
-      print("[remote disconnect]")
-      shutdown()
-      return
+    data = ""
+    while True:
+        read = socks.local.recv(1024).decode('utf-8')
+        print("Bot read", read, "from local")
+        if read == '':
+            print("[remote disconnect]")
+            shutdown()
+            return
 
-    data += read
-    while "\n" in data:
-      line, data = data.split("\n", 1)
-      handleLine(line.replace("\r",""))
+        data += read
+        while "\n" in data:
+            line, data = data.split("\n", 1)
+            try:
+                handleLine(line.replace("\r",""))
+            except Exception as e:
+                print(e)
+
 
 def mainLoop():
   api.raw = sendline
