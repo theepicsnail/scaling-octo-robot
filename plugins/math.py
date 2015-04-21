@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+DEBUG = False
 from collections import namedtuple
 import re
 sm = staticmethod
@@ -16,6 +17,9 @@ def staticmethod(func):
     print(" |" * depth, res)
     return res
   return newFunc
+
+if not DEBUG:
+  staticmethod = sm
 
 class TokenStream:
   def __init__(self, line):
@@ -233,7 +237,10 @@ class Atom(namedtuple('Atom', ['value', 'name'])):
     return scope.get(self.name, 0)
 
 def evaluate(line):
-  return Assignment.parse(TokenStream(line.replace(" ",""))).evaluate()
+  tree = Assignment.parse(TokenStream(line.replace(" ","")))
+  if tree is None:
+      return None
+  return tree.evaluate()
 
 scope = {}
 
@@ -244,7 +251,9 @@ import api
 def math(sender, message, target):
   if not message.startswith("%"):
     return
-
   equ = message[1:].replace(" ","")
-  api.privmsg(target, "{GREEN}=" + str(evaluate(equ)))
+  value = evaluate(equ)
+  if value is not None:
+      api.privmsg(target, "{GREEN}" + str(evaluate(equ)))
+
 
