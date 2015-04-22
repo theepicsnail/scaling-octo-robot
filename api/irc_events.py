@@ -1,35 +1,11 @@
+from api.handlers import register
 import re
-__handlers = {
-  "line": []
-}
-def emitEvent(event, *args):
-  for handler in __handlers.get(event, []):
-    handler(*args)
-
-
-# Irc commands
-def raw(line):
-  """Replaced by bot.py unpon having an actual handler
-  """
-  print("Unhandled", line)
-
-def rawf(line, *args):
-  raw(line.format(*args))
-
-def msg(target, message):
-  rawf("PRIVMSG {} :{}", target, message)
-privmsg = msg
-
-def join(chan):
-  rawf("JOIN {}", chan)
-
-
 
 # Decorators
 # Lower level - works on all lines of irc
 def onRawLine():
   def decorator(func):
-    __handlers["line"].append(func)
+    register("line", func)
     return func
   return decorator
 
@@ -41,6 +17,7 @@ def onRegex(expr, flags=0, search=False):
     @onRawLine()
     def handler(line):
       match = matchcmd(line)
+      #print("Checking " + line + " against " + expr + " " + str(match is not None))
       if not match:
         return
       func(match)
@@ -48,9 +25,47 @@ def onRegex(expr, flags=0, search=False):
   return decorator
 
 # protocol level - works of each interesting message type
+def __messageRegex(command):
+    return "^:(.*?)!.*?{} (.*?) ?:(.*)$".format(command)
+
+":snail!snail@#!-D1E8CCF0.hsd1.ca.comcast.net PART #!social :testing Part"
+":snail!snail@#!-D1E8CCF0.hsd1.ca.comcast.net JOIN :#!social"
+
+":someNick!a@#!-D1E8CCF0.hsd1.ca.comcast.net JOIN :#test"
+":lon1.irc.hashbang.sh 353 someNick = #test :someNick snail @viaken "
+":lon1.irc.hashbang.sh 366 someNick #test :End of /NAMES list."
+
+def onJoin():
+  def decorator(func):
+    @onRegex(__messageRegex("JOIN"))
+    def handler(match):
+      sender, target, message = match.groups()
+      func(sender, message)
+    return handler
+  return decorator
+
+def onPart():
+  def decorator(func):
+    @onRegex(__messageRegex("PART"))
+    def handler(match):
+      sender, chan, msg = match.groups()
+      func(sender, chan, msg)
+    return handler
+  return decorator
+
+def onNames():
+  def decorator(func):
+    @onRegex("^[^ ]+ 353 [^:]+ (.*?) :(.*)$")
+    def handler(match):
+      channel, names = match.groups()
+      names = names.strip().split()
+      func(channel, names)
+    return handler
+  return decorator
+
 def onPrivmsg():
   def decorator(func):
-    @onRegex("^:(.*?)!.*?PRIVMSG (.*?) :(.*)$")
+    @onRegex(__messageRegex("PRIVMSG"))
     def handler(match):
       sender, target, message = match.groups()
 
@@ -64,7 +79,7 @@ onMsg = onPrivmsg
 
 def onInvite():
   def decorator(func):
-    @onRegex("^:(.*?)!.*INVITE (.*?) :(.*)$")
+    @onRegex(__messageRegex("INVITE"))
     def handler(match):
       sender, target, channel = match.groups()
       func(sender, channel)
@@ -102,5 +117,4 @@ def onCommand(command=None, split=False):
   return decorator
 
 # add onSchedule(seconds)
-
 

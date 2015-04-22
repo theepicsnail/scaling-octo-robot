@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from colors import parse_colors
-import api
+from api import handlers
 import os
 #os.system("clear")
 sock_file = "/tmp/sock"
@@ -36,14 +36,14 @@ def readLocal():
 
 
 def mainLoop():
-  api.raw = sendline
+  handlers.register("sendline", sendline)
   for f in os.listdir("plugins"):
     if not f[0].isalpha():
       continue
     name = f.split(".")[0]
     __import__("plugins." + name)
 
-  api.emitEvent("ready")
+  #handlers.emitEvent("ready")
   while True:
     line = sys.stdin.readline()
     socks.local.send(line.encode('utf-8'))
@@ -52,7 +52,7 @@ def shutdown():
   pass
 
 def handleLine(line):
-  api.emitEvent("line", line)
+  handlers.emitEvent("line", line)
 
 socks.local = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 socks.local.connect(sock_file)
