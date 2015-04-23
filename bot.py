@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from colors import parse_colors
+from util.color import parse_colors
 from api import handlers
 import os
 #os.system("clear")

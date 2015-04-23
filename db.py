@@ -2,12 +2,12 @@
 Various database providers, as well as some wrapers and backing logic over them.
 
 """
-import utils
+import util.caller
 import shelve
 
 class Shelve:
   def __init__(self, name=None):
-    self.filename = utils.caller()
+    self.filename = util.caller.getCaller()
     if name:
       self.filename += "_" + name
     self.filename += ".shlv"
