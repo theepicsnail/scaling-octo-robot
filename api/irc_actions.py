@@ -6,7 +6,7 @@ def rawf(line, *args):
   raw(line.format(*args))
 
 def msg(target, message):
-  rawf("PRIVMSG {} :{}", target, message)
+  rawf(u"PRIVMSG {} :{}", target, message)
 privmsg = msg
 
 def join(chan):
