@@ -1,0 +1,3 @@
+*.shlv
+*.pyc
+__pycache__
