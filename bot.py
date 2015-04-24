@@ -6,6 +6,7 @@ import os
 sock_file = "/tmp/sock"
 import socket, sys, threading
 
+
 class socks:
   local = None
 
@@ -18,8 +19,12 @@ def sendline(line):
 
 def readLocal():
     data = ""
+    socks.local.settimeout(.1)
     while True:
-        read = socks.local.recv(1024).decode('utf-8')
+        try:
+            read = socks.local.recv(1024).decode('utf-8')
+        except socket.timeout:
+            continue
         print("Bot read", read, "from local")
         if read == '':
             print("[remote disconnect]")
@@ -38,14 +43,21 @@ def readLocal():
 def mainLoop():
   handlers.register("sendline", sendline)
   for f in os.listdir("plugins"):
-    if not f[0].isalpha():
+    if not f.endswith(".py"): # Not python? skip.
+      continue
+    if f.endswith("test.py"): # Python, but is a test? skip.
       continue
     name = f.split(".")[0]
     __import__("plugins." + name)
 
   #handlers.emitEvent("ready")
   while True:
-    line = sys.stdin.readline()
+    try:
+        line = sys.stdin.readline()
+    except KeyboardInterrupt:
+        print("Keyboard interrupt. closing socket")
+        socks.local.close()
+        return
     socks.local.send(line.encode('utf-8'))
 
 def shutdown():
