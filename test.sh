@@ -1,2 +1,2 @@
 clear
-python -m unittest discover . '*_test.py'
+python3 -m unittest discover . '*_test.py'
