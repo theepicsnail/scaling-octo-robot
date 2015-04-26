@@ -1,7 +1,5 @@
 import api
 import db
-print("imported api, got:")
-print(dir(api))
 # Create a shelve.
 # also seed it with initial data
 d = db.Shelve().seed({
