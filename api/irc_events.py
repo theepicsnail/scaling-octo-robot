@@ -102,7 +102,8 @@ def onCommand(command=None, split=False):
   def decorator(func):
     @onPrivmsg()
     def commandHandler(who, what, where):
-      if not what.startswith("!" + command):
+
+      if re.match("^!" + command + "(\\s.*|)$", what) is None:
         return
 
       if split:
