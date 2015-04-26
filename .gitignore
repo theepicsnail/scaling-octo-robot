@@ -1,3 +1,4 @@
 *.shlv
 *.pyc
 __pycache__
+.connector.pid
