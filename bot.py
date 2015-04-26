@@ -37,7 +37,8 @@ def readLocal():
             try:
                 handleLine(line.replace("\r",""))
             except Exception as e:
-                print(e)
+                import traceback
+                traceback.print_exc()
 
 
 def mainLoop():
