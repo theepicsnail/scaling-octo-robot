@@ -27,6 +27,12 @@ class Shelve:
   def __setitem__(self, key, val):
        self.shelve[self.fixKey(key)] = val
 
+  def __contains__(self, key):
+    return key in self.shelve
+
+  def __delitem__(self, key):
+    del self.shelve[key]
+
   def seed(self, mapping):
     """Sets default values for this instance"""
     for k,v in mapping.items():
