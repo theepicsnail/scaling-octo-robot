@@ -1,13 +1,20 @@
 from testing.testcase import TestCase
-import heart
+from . import heart
 
 class TestHeart(TestCase):
   def test_without_heart(self):
-    self.receive.privmsg("user", "test", "channel")
-    self.assertEqual(self.sent, [])
+    self.receive.privmsg(
+        self.env.user,
+        self.env.message,
+        self.env.channel)
+    self.assertNoSent()
 
   def test_with_heart(self):
-    self.receive.privmsg("user", "te<3st", "channel")
-    expected = u'PRIVMSG user :te{C5}\u2665{}st'
-    self.assertEqual(self.sent, [expected])
+    self.receive.privmsg(
+        self.env.user,
+        "te<3st",
+        self.env.channel)
 
+    self.assertPrivmsg(
+        self.env.channel,
+        'te{C5}\u2665{}st')
