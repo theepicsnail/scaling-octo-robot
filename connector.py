@@ -28,7 +28,7 @@ class SocketBase:
             print("[%s Connected]" % self.name)
 
         try:
-            ret = self.sock.recv(1024).decode('utf-8')
+            ret = self.sock.recv(1024).decode('utf-8', 'ignore')
 
             if ret == "":
                 self.sock = None
