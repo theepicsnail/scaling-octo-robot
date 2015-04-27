@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-DEBUG = True
+DEBUG = False
 from collections import namedtuple
 import re
 sm = staticmethod
@@ -21,11 +21,22 @@ def staticmethod(func):
 if not DEBUG:
   staticmethod = sm
 
+
+
+
+
+
+
+
+
 class TokenStream:
   def __init__(self, line):
     self.pos = 0
-    self.toks = list(filter(bool,re.split(r"(\d+\.\d+|\d+|\w+|.)", line)))
+    self.toks = list(filter(bool,re.split(r"(\d*\.\d+|\d+|\w+|_|.)", line)))
     self.toks.append("<END>")
+
+  def peek(self):
+    return self.toks[self.pos]
 
   def get(self):
     t = self.toks[self.pos]
@@ -39,6 +50,12 @@ class TokenStream:
     return str(self.pos) + str(self.toks)
   def __repr__(self):
     return str(self)
+
+def Error(msg, stream):
+  lines = stream.toks[:-1]
+  valid = "".join(lines[:stream.pos])
+  invalid = "".join(lines[stream.pos:])
+  raise Exception("{{GREEN}}{}{{RED}}<{}>{{GREEN}}{}".format(valid, msg, invalid))
 
 def optional(cls, toks):
   t = toks.pos
@@ -122,7 +139,6 @@ class FunctionalAssignment(namedtuple('FunctionalAssignment', ['name', 'args', '
 
 
   def call(self, args):
-    print("Call", args, self)
     if len(args) != len(self.args):
         return None
     nscope = scope.copy()
@@ -142,13 +158,13 @@ class NativeFunction:
     return self
 
   def call(self, args):
-    print("NativeCall", args, self)
     vals = [e.evaluate(scope) for e in args]
     return self.func(*vals)
 
   def __str__(self):
     return self.name
 
+#class MuliExpr(namedtuple('MuliExpr', ['head', 'tail'])):
 
 class Expression(namedtuple('Expression', ['head', 'tail'])):
   @staticmethod
@@ -165,7 +181,8 @@ class Expression(namedtuple('Expression', ['head', 'tail'])):
         break
       val = Term.parse(line)
       if val is None:
-        raise "Expected atom"
+        raise Error("Expected atom", line)
+
       tail.append((op, val))
 
     if not tail:
@@ -199,7 +216,6 @@ class Term(namedtuple('Term', ['head', 'tail'])):
     tail = []
     while True:
       op = line.get()
-      print("op", op)
       if op not in "*/%":
         line.unget()
         break
@@ -274,7 +290,6 @@ class Value(namedtuple('Value', ['base', 'mod', 'tail'])):
   def evaluate(self, scope):
     val = self.base.evaluate(scope)
     for t in self.tail:
-        print(t, val)
         val = t.evaluate(scope,val)
 
     if self.mod == '-':
@@ -308,7 +323,7 @@ class Tail(namedtuple('Tail', ['args'])):
             if val == ')':
                 return Tail(args)
             elif val != ',':
-                return None
+                raise Error("Unclosed Function call", line)
 
     def evaluate(self, scope, func):
         if type(func) in [FunctionalAssignment, NativeFunction]:
@@ -323,20 +338,18 @@ class Atom(namedtuple('Atom', ['value', 'name'])):
   @staticmethod
   def parse(line):
     tok = line.get()
-    if tok == '(': # subexpressions
-        val = Expression.parse(line)
-        if val is None:
-            return None
-        tok = line.get()
-        if tok != ')':
-            return None
-        return val
+    if tok == "(":
+      line.unget()
+      return Parens.parse(line)
     if tok.isalpha():
       return Atom(None, tok)
     try:
       return Atom(float(tok), None)
     except:
-      return None
+      pass
+    if tok == "<END>":
+      raise Error("Incomplete expression", line)
+    raise Error("Unexpected token", line)
 
   def __str__(self):
       return str(self.value) if self.value is not None else self.name
@@ -346,8 +359,30 @@ class Atom(namedtuple('Atom', ['value', 'name'])):
       return self.value
     return scope.get(self.name, 0)
 
+class Parens(namedtuple('Parens',['tree'])):
+  @staticmethod
+  def parse(line):
+      tok = line.get()
+      if tok != '(':
+        return None
+
+      val = Assignment.parse(line)
+      if val is None:
+        raise Error("Invalid sub expression", line)
+
+      tok = line.get()
+      if tok != ')':
+          raise Error("Unclosed ')'", line)
+      return val
+
+
 def evaluate(line):
-  tree = Assignment.parse(TokenStream(line.replace(" ","")))
+  stream = TokenStream(line.replace(" ",""))
+  tree = Assignment.parse(stream)
+
+  if stream.peek() != '<END>':
+    raise Error("Incomplete parse", stream)
+
   if tree is None:
       return None
   global scope
@@ -363,7 +398,6 @@ for name in dir(math):
     scope[name] = NativeFunction(name, attr)
   elif type(attr) == float:
     scope[name] = attr
-    print(name, type(attr))
 
 
 import api
@@ -373,8 +407,10 @@ def math(sender, message, target):
   if not message.startswith("%"):
     return
   equ = message[1:].replace(" ","")
-  value = evaluate(equ)
-  if value is not None:
-      api.privmsg(target, "{GREEN}" + str(value))
-
-
+  try:
+    value = evaluate(equ)
+    if value is not None:
+        api.privmsg(target, "{GREEN}" + str(round(value,15)))
+  except Exception as e:
+    api.privmsg(target, str(e))
+    raise
