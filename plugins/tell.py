@@ -1,7 +1,11 @@
 import api
 import datetime
 from collections import defaultdict
-messages = defaultdict(list)
+import db
+
+store = db.Shelve().seed({"alarms":{}})
+messages = store["alarms"]
+
 
 """
 Minor interesting point. if you tell yourself a message, then the
@@ -21,6 +25,7 @@ def activity(who, what, where):
         for msg in messages[who]:
             api.privmsg(who, msg)
         del messages[who]
+        store["alarms"] = messages
 
 @api.onCommand("tell")
 def onTell(who, args, where):
@@ -28,7 +33,10 @@ def onTell(who, args, where):
     when = datetime.datetime.now().strftime("%H:%M:%S %m/%d/%y")
 
     msg = when + " " + nick +": " + msg
+    if nick not in messages:
+      messages[nick] = []
     messages[nick].append(msg)
+    store["alarms"] = messages
 
 
 
