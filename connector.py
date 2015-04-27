@@ -46,7 +46,7 @@ class IrcSocket(SocketBase):
     name = "Irc"
     def connect(self):
         host, port = "irc.hashbang.sh", 6697
-        nick = "someNick"
+        nick = "`"
         secure = True
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if secure:
