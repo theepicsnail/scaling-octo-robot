@@ -3,8 +3,9 @@ import datetime
 from collections import defaultdict
 import db
 
-store = db.Shelve().seed({"alarms":{}})
+store = db.Shelve().seed({"alarms":{}, "blocked":set()})
 messages = store["alarms"]
+blocked = store["blocked"]
 
 
 """
@@ -29,8 +30,28 @@ def activity(who, what, where):
 
 @api.onCommand("tell")
 def onTell(who, args, where):
+    print("Tell:")
+    print(store["blocked"])
+    print(store["alarms"])
+    if args == "off":
+        blocked.add(who)
+        store["blocked"] = blocked
+        api.privmsg(who, "!tell's are disabled for you. Use '!tell on' to turn them back on")
+        return
+
+    if args == "on":
+        blocked.remove(who)
+        store["blocked"] = blocked
+        api.privmsg(who, "!tell's are enabled for you. Use '!tell off' to turn them off")
+        return
+
     nick, msg = args.split(" ", 1)
     when = datetime.datetime.now().strftime("%H:%M:%S %m/%d/%y")
+
+    if nick in store["blocked"]:
+        api.privmsg(who, "{} has {{RED}}disabled {{}}!tells please use memoserv or a PM instead".format(nick))
+        return
+
 
     msg = when + " " + nick +": " + msg
     if nick not in messages:
