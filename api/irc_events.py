@@ -117,5 +117,18 @@ def onCommand(command=None, split=False):
     return commandHandler
   return decorator
 
+def onCTCP(command):
+  def decorator(func):
+    @onPrivmsg()
+    def commandHandler(who, what, where):
+      match = re.match("\x01([^ ]+) ?(.*?)\x01", what)
+      if match is None:
+        return
+
+      cmd, args = match.groups()
+      if command == cmd:
+        func(who, cmd, args)
+    return commandHandler
+  return decorator
 # add onSchedule(seconds)
 
