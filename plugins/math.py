@@ -22,13 +22,6 @@ if not DEBUG:
   staticmethod = sm
 
 
-
-
-
-
-
-
-
 class TokenStream:
   def __init__(self, line):
     self.pos = 0
@@ -405,6 +398,8 @@ import api
 @api.onPrivmsg()
 def math(sender, message, target):
   if not message.startswith("%"):
+    return
+  if message.startswith("%_%"):
     return
   equ = message[1:].replace(" ","")
   try:
