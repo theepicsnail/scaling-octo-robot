@@ -79,7 +79,8 @@ class IrcSocket(SocketBase):
         self.send("NICK {}\r\n".format(
             registration["nick"]
             ))
-        self.firstMessage = True
+        self.autorun = True
+
 class LocalSocket(SocketBase):
     name = "Local"
     sock_file = "/tmp/sock"
@@ -104,14 +105,13 @@ def serverToLocal():
             line, buff = buff.split("\n",1)
             if line.startswith("PING "):
                 irc.send(line.replace("PING", "PONG")+"\n")
-
-                if irc.firstMessage:
-                    irc.firstMessage = False
-                    i = 1
-                    while str(i) in autorun:
-                        line = autorun[str(i)]
-                        irc.send(line + "\r\n")
-                        i += 1
+            if irc.autorun and :
+                irc.autorun = False
+                i = 1
+                while str(i) in autorun:
+                    line = autorun[str(i)]
+                    irc.send(line + "\r\n")
+                    i += 1
 
 
         local.send(read)
