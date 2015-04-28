@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import socket, ssl, select, os, threading, configparser
+import socket, ssl, select, os, threading, configparser, time
 
 class SocketBase:
     def __init__(self):
@@ -53,7 +53,21 @@ class IrcSocket(SocketBase):
             context.load_default_certs()
             s = context.wrap_socket(s, server_hostname=host)
 
-        s.connect((connection["host"], int(connection.get("port", "6667"))))
+        connected = False
+        delay = 1
+        while not connected:
+            try:
+                s.connect((connection["host"],
+                    int(connection.get("port", "6667"))))
+                connected = True
+            except Exception:
+                print("[Connection refused]")
+                print("Waiting {}s".format(delay))
+                time.sleep(delay)
+                delay *= 2
+                if delay > 30:
+                    delay = 30
+
         self.sock = s
 
         self.send("USER {} {} * :{}\r\n".format(
