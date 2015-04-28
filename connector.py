@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-
-
-import socket, ssl, select, os, threading
-os.system("clear")
+import socket, ssl, select, os, threading, configparser
 
 class SocketBase:
     def __init__(self):
@@ -14,7 +11,7 @@ class SocketBase:
     def send(self, text):
         try:
             text = text.encode('utf-8')
-            print(self.name,"<<",text.strip())
+            print(self.name,"<<",text.strip()[:60])
             self.sock.send(text)
             return
         except Exception as e:
@@ -34,7 +31,7 @@ class SocketBase:
                 self.sock = None
                 return self.read()
 
-            print(self.name,">>",ret.strip())
+            print(self.name,">>",ret.strip()[:60])
             return ret
         except Exception as e:
             print(e)
@@ -42,24 +39,33 @@ class SocketBase:
             raise # This should go away
         return self.read()
 
+
 class IrcSocket(SocketBase):
     name = "Irc"
     def connect(self):
         host, port = "irc.hashbang.sh", 6697
         nick = "`"
-        secure = True
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if secure:
+        if connection.get("ssl", False):
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             context.verify_mode = ssl.CERT_REQUIRED
             context.check_hostname = True
             context.load_default_certs()
             s = context.wrap_socket(s, server_hostname=host)
 
-        s.connect((host, port))
+        s.connect((connection["host"], int(connection.get("port", "6667"))))
         self.sock = s
-        self.send("USER a b c d :e\r\nNICK " + nick + "\r\n")
 
+        self.send("USER {} {} * :{}\r\n".format(
+            registration["username"],
+            registration["mode"],
+            registration["realname"]
+            ))
+
+        self.send("NICK {}\r\n".format(
+            registration["nick"]
+            ))
+        self.firstMessage = True
 class LocalSocket(SocketBase):
     name = "Local"
     sock_file = "/tmp/sock"
@@ -75,9 +81,6 @@ class LocalSocket(SocketBase):
         localSock.listen(1)
         self.sock,_ = localSock.accept()
 
-local = LocalSocket()
-irc = IrcSocket()
-
 def serverToLocal():
     buff = ""
     while True:
@@ -88,16 +91,38 @@ def serverToLocal():
             if line.startswith("PING "):
                 irc.send(line.replace("PING", "PONG")+"\n")
 
+                if irc.firstMessage:
+                    irc.firstMessage = False
+                    i = 1
+                    while str(i) in autorun:
+                        line = autorun[str(i)]
+                        irc.send(line + "\r\n")
+                        i += 1
+
+
         local.send(read)
+
 def localToServer():
     while True:
         irc.send(local.read())
 
 
+os.system("clear")
+
+conf = configparser.ConfigParser()
+conf.read("config.cfg")
+connection = conf["Connection"] # Required
+registration = conf["Registration"] # Required
+autorun = conf["Autorun"] if "Autorun" in conf else {} # Optional
+
+local = LocalSocket()
+irc = IrcSocket()
+
 a = threading.Thread(target=serverToLocal)
 b = threading.Thread(target=localToServer)
 a.start()
 b.start()
+
 a.join()
 b.join()
 
