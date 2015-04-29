@@ -53,7 +53,7 @@ def onTell(who, args, where):
         return
 
 
-    msg = when + " " + nick +": " + msg
+    msg = when + " " + who +": " + msg
     if nick not in messages:
       messages[nick] = []
     messages[nick].append(msg)
