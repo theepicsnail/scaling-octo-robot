@@ -105,13 +105,13 @@ def serverToLocal():
             line, buff = buff.split("\n",1)
             if line.startswith("PING "):
                 irc.send(line.replace("PING", "PONG")+"\n")
-            if irc.autorun and :
-                irc.autorun = False
-                i = 1
-                while str(i) in autorun:
-                    line = autorun[str(i)]
-                    irc.send(line + "\r\n")
-                    i += 1
+                if irc.autorun:
+                    irc.autorun = False
+                    i = 1
+                    while str(i) in autorun:
+                        line = autorun[str(i)]
+                        irc.send(line + "\r\n")
+                        i += 1
 
 
         local.send(read)
