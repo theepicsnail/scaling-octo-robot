@@ -12,6 +12,9 @@ class Shelve:
       self.filename += "_" + name
     self.filename += ".shlv"
     print(self.filename)
+    self.open()
+
+  def open(self):
     self.shelve = shelve.open("data/" + self.filename)
 
   def fixKey(self, key):
