@@ -2,6 +2,10 @@ __handlers = {
   "line": [],
   "sendline": []
 }
+
+def unregister(event, callback):
+  __handlers[event].remove(callback)
+
 def register(event, callback):
   __handlers[event].append(callback)
 
