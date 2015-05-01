@@ -3,7 +3,9 @@ import datetime
 from collections import defaultdict
 import db
 
-store = db.Shelve().seed({"alarms":{}, "blocked":set()})
+store = db.Shelve().seed({
+  "alarms":{},
+  "blocked":set()})
 messages = store["alarms"]
 blocked = store["blocked"]
 
@@ -30,34 +32,40 @@ def activity(who, what, where):
 
 @api.onCommand("tell")
 def onTell(who, args, where):
-    print("Tell:")
-    print(store["blocked"])
-    print(store["alarms"])
     if args == "off":
         blocked.add(who)
         store["blocked"] = blocked
-        api.privmsg(who, "!tell's are disabled for you. Use '!tell on' to turn them back on")
+        api.privmsg(who, offMessage)
         return
 
     if args == "on":
         blocked.remove(who)
         store["blocked"] = blocked
-        api.privmsg(who, "!tell's are enabled for you. Use '!tell off' to turn them off")
+        api.privmsg(who, onMessage)
         return
 
     nick, msg = args.split(" ", 1)
-    when = datetime.datetime.now().strftime("%H:%M:%S %m/%d/%y")
-
     if nick in store["blocked"]:
-        api.privmsg(who, "{} has {{RED}}disabled {{}}!tells please use memoserv or a PM instead".format(nick))
+        api.privmsg(who,
+            disabledMessage.format(nick))
         return
 
-
+    when = getTime()
     msg = when + " " + who +": " + msg
     if nick not in messages:
       messages[nick] = []
     messages[nick].append(msg)
     store["alarms"] = messages
 
+
+offMessage = "!tell's are {RED}disabled{} for you. Use '!tell on' to turn them back on"
+onMessage = "!tell's are {GREEN}enabled{} for you. Use '!tell off' to disable them"
+disabledMessage = "{} has {{RED}}disabled{{}} !tells. Please use memoserv or a PM instead"
+
+
+# This is hard to test correctly with actual time
+# Factor it out so that the test can replace it.
+def getTime():
+    return datetime.datetime.now().strftime("%H:%M:%S %m/%d/%y")
 
 
