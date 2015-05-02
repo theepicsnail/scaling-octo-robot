@@ -83,16 +83,18 @@ class IrcSocket(SocketBase):
 
 class LocalSocket(SocketBase):
     name = "Local"
-    sock_file = "/tmp/sock"
+    def __init__(self, sock):
+      super().__init__()
+      self.sock_file = sock
 
     def connect(self):
         self.name = "Local"
         self.sock = None
-        try:
-            os.unlink(LocalSocket.sock_file)
-        except:pass
+        #try:
+        #    os.unlink(LocalSocket.sock_file)
+        #except:pass
         localSock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        localSock.bind(LocalSocket.sock_file)
+        localSock.bind(self.sock_file)
         localSock.listen(1)
         self.sock,_ = localSock.accept()
 
@@ -129,7 +131,8 @@ connection = conf["Connection"] # Required
 registration = conf["Registration"] # Required
 autorun = conf["Autorun"] if "Autorun" in conf else {} # Optional
 
-local = LocalSocket()
+local = LocalSocket(connection["local"])
+local.connect() # Wait for a connection locally before trying to connect remotely
 irc = IrcSocket()
 
 a = threading.Thread(target=serverToLocal)

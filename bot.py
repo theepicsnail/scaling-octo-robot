@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
+import configparser
+conf = configparser.ConfigParser()
+conf.read("config.cfg")
+sock_file = conf.get("Connection", "local")
+
 from util.color import parse_colors
 from api import handlers
 import os
-#os.system("clear")
-sock_file = "/tmp/sock"
+
 import socket, sys, threading
 
 
@@ -25,7 +29,7 @@ def readLocal():
             read = socks.local.recv(1024).decode('utf-8')
         except socket.timeout:
             continue
-        print("Bot read", read, "from local")
+        print(">>", read)
         if read == '':
             print("[remote disconnect]")
             shutdown()
