@@ -10,8 +10,8 @@ class SocketBase:
 
     def send(self, text):
         try:
-            text = text.encode('utf-8')
             print(self.name,"<<",text.strip()[:60])
+            text = text.encode('utf-8')
             self.sock.send(text)
             return
         except Exception as e:
@@ -83,20 +83,21 @@ class IrcSocket(SocketBase):
 
 class LocalSocket(SocketBase):
     name = "Local"
-    def __init__(self, sock):
+    def __init__(self, sockfile):
       super().__init__()
-      self.sock_file = sock
+      self.sock_file = sockfile
+      self.name = "Local"
+      self.sock = None
+      #try:
+      #    os.unlink(LocalSocket.sock_file)
+      #except:pass
+      self.localSock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+      self.localSock.bind(self.sock_file)
+      self.localSock.listen(1)
+
 
     def connect(self):
-        self.name = "Local"
-        self.sock = None
-        #try:
-        #    os.unlink(LocalSocket.sock_file)
-        #except:pass
-        localSock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        localSock.bind(self.sock_file)
-        localSock.listen(1)
-        self.sock,_ = localSock.accept()
+      self.sock,_ = self.localSock.accept()
 
 def serverToLocal():
     buff = ""
