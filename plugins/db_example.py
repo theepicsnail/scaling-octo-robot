@@ -2,7 +2,7 @@ import api
 import db
 # Create a shelve.
 # also seed it with initial data
-d = db.Shelve().seed({
+d = db.Shelve({
   "loads": 0
 })
 

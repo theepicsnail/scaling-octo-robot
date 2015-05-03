@@ -3,7 +3,7 @@ import datetime
 from collections import defaultdict
 import db
 
-store = db.Shelve().seed({
+store = db.Shelve({
   "alarms":{},
   "blocked":set()})
 messages = store["alarms"]

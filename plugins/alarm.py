@@ -5,7 +5,7 @@ import db
 import threading
 parse = parsedatetime.Calendar().parse
 
-store = db.Shelve().seed({
+store = db.Shelve({
     "next":[]
 })
 cache = store["next"]

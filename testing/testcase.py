@@ -3,10 +3,10 @@ import api.handlers
 
 # Replace db's with dict-backed shelves instead of files.
 import db
-class FakeShelve(db.Shelve):
-    def open(self):
-        self.shelve = {}
-db.Shelve = FakeShelve
+db.shelve_opener = lambda name:{}
+db.sqlite3_opener = lambda name:db.sqlite3.connect(":memory:")
+
+
 
 channel = "#testchan"
 

@@ -4,44 +4,34 @@ Various database providers, as well as some wrapers and backing logic over them.
 """
 import util.caller
 import shelve
+import sqlite3
 
-class Shelve:
-  def __init__(self, name=None):
-    self.filename = util.caller.getCaller()
-    if name:
-      self.filename += "_" + name
-    self.filename += ".shlv"
-    print(self.filename)
-    self.open()
+# Gets overwritten during testing
+def shelve_opener(filename):
+  return shelve.open("data/" + filename)
 
-  def open(self):
-    self.shelve = shelve.open("data/" + self.filename)
+def Shelve(default = {}):
+  filename = util.caller.getCaller()+".shlv"
+  db = shelve_opener(filename)
 
-  def fixKey(self, key):
-    if not isinstance(key, str):
-      key2 = "%s" % key
-      print("[Warning] key '%s' is not a basestring. Using '%s' as a key." % (key, key2))
-      return key2
-    return key
+  for k,v in default.items():
+    if k not in db:
+      db[k]=v
+  return db
 
-  def __getitem__(self, key):
-    return self.shelve[self.fixKey(key)]
+# Gets overwritten during testing
+def sqlite3_opener(db):
+  return sqlite3.connect(db)
 
-  def __setitem__(self, key, val):
-       self.shelve[self.fixKey(key)] = val
+def Sqlite3(defaultCommands=[]):
+  filename = util.caller.getCaller()+".sql3"
+  db = sqlite3_opener(filename)
 
-  def __contains__(self, key):
-    return key in self.shelve
+  for instr in defaultCommands:
+    db.execute(instr)
+  return db
 
-  def __delitem__(self, key):
-    del self.shelve[key]
 
-  def seed(self, mapping):
-    """Sets default values for this instance"""
-    for k,v in mapping.items():
-      k = self.fixKey(k)
-      if k not in self.shelve:
-        self[k]=v
-    return self
+
 
 
