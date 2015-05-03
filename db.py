@@ -21,14 +21,15 @@ def Shelve(default = {}):
 
 # Gets overwritten during testing
 def sqlite3_opener(db):
-  return sqlite3.connect(db)
+  return sqlite3.connect("data/" + db)
 
 def Sqlite3(defaultCommands=[]):
   filename = util.caller.getCaller()+".sql3"
   db = sqlite3_opener(filename)
-
+  c = db.cursor()
   for instr in defaultCommands:
-    db.execute(instr)
+    c.execute(instr)
+  db.commit()
   return db
 
 
