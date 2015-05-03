@@ -8,7 +8,10 @@ cache = {}
 
 def define(phrase):
     data = urllib.request.urlopen(url + phrase).read().decode("utf-8")
-    return json.loads(data)["tuc"][0]["meanings"]
+    jdata = json.loads(data)
+    if "tuc" not in jdata:
+      return []
+    return jdata[0]["meanings"]
 
 @api.onCommand("gd")
 #@api.onCommand("define")
@@ -17,6 +20,9 @@ def handle(who, msg, where):
     if not res:
         return
     num, term = res.groups()
+    if not term:
+      return api.privmsg(where, usage)
+
     if num:
         num = int(num.strip())
     else:
@@ -30,15 +36,23 @@ def handle(who, msg, where):
         val = define(term)
         cache[term]=val
 
-
     n = len(val)
+    if n == 0:
+        api.privmsg(where, noDefinitions.format(term=term))
+        return
     num -= 1
     if num >= n:
-        api.privmsg(where, "{} has {} definitions. [1-{}]".format(term, n,n))
+        api.privmsg(where, invalidArg.format(term = term, tot = n))
         return
 
     definition = val[num]["text"]
-    api.privmsg(where, "<{{C3}}Definition{{}} {{B}}{}{{}} (of {}) for {{B}}{}{{}}> {}".format(
-        num + 1, n, term, definition))
+    api.privmsg(where, definitionFmt.format(
+      num = num + 1,
+      tot = n,
+      term = term,
+      definition = definition))
 
-
+usage = "!gd [num] TERM"
+noDefinitions = "No definition for '{term}' found."
+invalidArg = "{term}  has {tot} definitions. [1-{tot}]"
+definitionFmt = "<{{C3}}Definition{{}} {{B}}{num}{{}} (of {tot}) for {{B}}{term}{{}}> {definition}"
