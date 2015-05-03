@@ -1,1 +1,1 @@
-echo -n $@
+echo -n "$@"

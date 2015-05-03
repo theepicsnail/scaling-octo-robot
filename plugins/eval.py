@@ -35,7 +35,7 @@ def shorten(line):
 def execute(sender, script, arg, chan):
   filepath = inspect.getfile(inspect.currentframe())
   script = os.path.join(os.path.dirname(filepath), "eval", script + ".sh")
-  cmd = ["bash", script, "'%s'"%arg]
+  cmd = ["bash", script, arg]  # "'%s'"%arg]
   p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   threading.Timer(5, p.terminate) # Kill after 5 seconds
   out, err=  p.communicate()

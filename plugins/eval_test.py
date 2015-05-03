@@ -12,7 +12,7 @@ class TestEval(TestCase):
   @patch('sys.stdout', new_callable=StringIO)
   def test_echo(self, stdout):
     self.alice.say("!eval echo test")
-    self.alice.assertMsg(eval.stdoutFmt.format("'test'"))
+    self.alice.assertMsg(eval.stdoutFmt.format("test"))
 
     #TODO fix this assertion
     self.assertNotEqual(
@@ -32,7 +32,7 @@ class TestEval(TestCase):
   @patch('sys.stdout', new_callable=StringIO)
   def test_no_bash_evaluation(self, stdout):
     self.alice.say("!eval echo *")
-    self.alice.assertMsg(eval.stdoutFmt.format("'*'"))
+    self.alice.assertMsg(eval.stdoutFmt.format("*"))
     # Should be '*' not a directory list.
 
     #TODO fix this assertion
