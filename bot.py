@@ -22,6 +22,16 @@ def sendline(line):
     socks.local.send(line.encode("utf-8"))
 
 def readLocal():
+    handlers.register("sendline", sendline)
+    for f in os.listdir("plugins"):
+        if not f.endswith(".py"): # Not python? skip.
+          continue
+        if f.endswith("test.py"): # Python, but is a test? skip.
+          continue
+        name = f.split(".")[0]
+        __import__("plugins." + name)
+
+
     data = ""
     socks.local.settimeout(.1)
     while True:
@@ -46,15 +56,6 @@ def readLocal():
 
 
 def mainLoop():
-  handlers.register("sendline", sendline)
-  for f in os.listdir("plugins"):
-    if not f.endswith(".py"): # Not python? skip.
-      continue
-    if f.endswith("test.py"): # Python, but is a test? skip.
-      continue
-    name = f.split(".")[0]
-    __import__("plugins." + name)
-
   #handlers.emitEvent("ready")
   while True:
     try:
