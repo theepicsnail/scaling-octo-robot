@@ -5,7 +5,7 @@ Various database providers, as well as some wrapers and backing logic over them.
 import util.caller
 import shelve
 import sqlite3
-
+import redis
 # Gets overwritten during testing
 def shelve_opener(filename):
   return shelve.open("data/" + filename)
@@ -32,7 +32,10 @@ def Sqlite3(defaultCommands=[]):
   db.commit()
   return db
 
+def redis_opener(host, port, db):
+    return redis.StrictRedis(host=host, port=port, db=db)
 
-
-
-
+def Redis(host="localhost", port=6379, db=0):
+    cli = redis_opener(host, port, db)
+    # Seeding ?
+    return cli
