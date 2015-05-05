@@ -31,10 +31,21 @@ def handle(who, msg, where):
   short = ""
   if len(url) >= 20: # Long enough for a shorten
     short = shorten(url)
-    short = "{{LINK}}{}{{}} | ".format(shorten(url))
+    short = shortFmt.format(shorten(url))
 
   title = getTitle(url)
+  if title:
+    title = titleFmt.format(title)
 
-  out = "<{}{{blue}}Title{{}}: {{yellow}}{}{{}}>".format(short, title)
-  api.privmsg(where, out)
+  if short or title:
+    divider = ""
+    if short and title:
+      divider = delim
+    out = outputFmt.format(short=short, delim=divider, title=title)
+    api.privmsg(where, out)
+
+delim = " | "
+shortFmt = "{{LINK}}{}{{}}"
+titleFmt = "{{blue}}Title{{}}: {{yellow}}{}{{}}"
+outputFmt = "<{short}{delim}{title}>"
 
