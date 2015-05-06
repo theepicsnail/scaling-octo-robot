@@ -9,10 +9,12 @@ url_re = "(https?[^\\s]+)"
 
 
 def getTitle(url):
-    data = urllib.request.urlopen(url).read().decode("utf-8")
-    title = " ".join(data.split("<title>")[1].split("</title>")[0].split())
-    return html.unescape(title)
-
+    try:
+        data = urllib.request.urlopen(url).read().decode("utf-8")
+        title = " ".join(data.split("<title>")[1].split("</title>")[0].split())
+        return html.unescape(title)[:100]
+    except:
+        return ""
 def shorten(url):
     safeurl = urllib.parse.quote(url)
     v_gd = "http://v.gd/create.php?format=simple&url="
